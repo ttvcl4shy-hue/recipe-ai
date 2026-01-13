@@ -1,10 +1,3 @@
-<body class="bg-gray-100">
-    <!-- VERSION STAMP - If you see "v2.0" on screen, it's the new version -->
-    <div style="position: fixed; top: 50px; left: 0; right: 0; text-align: center; z-index: 9999; background: #10b981; color: white; padding: 8px; font-weight: bold;">
-        🎨 NEW DESIGN v2.0
-    </div>
-    
-    <!-- REST OF YOUR CODE... -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -16,7 +9,6 @@
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
     <style>
-        /* Professional color palette */
         :root {
             --primary-red: #ef4444;
             --primary-red-dark: #dc2626;
@@ -30,10 +22,9 @@
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
             background: var(--bg-gray);
-            padding-bottom: 80px; /* Space for bottom nav */
+            padding-bottom: 80px;
         }
         
-        /* Bottom navigation styling */
         .bottom-nav {
             position: fixed;
             bottom: 0;
@@ -56,7 +47,9 @@
             color: var(--text-medium);
             text-decoration: none;
             font-size: 12px;
+            font-weight: 600;
             transition: color 0.2s;
+            cursor: pointer;
         }
         
         .nav-item.active {
@@ -68,7 +61,6 @@
             margin-bottom: 2px;
         }
         
-        /* Card styling */
         .card {
             background: var(--card-white);
             border-radius: 16px;
@@ -91,7 +83,6 @@
             margin-bottom: 16px;
         }
         
-        /* Input styling */
         .input-field {
             width: 100%;
             padding: 14px;
@@ -107,7 +98,6 @@
             border-color: var(--primary-red);
         }
         
-        /* Button styling */
         .btn-primary {
             width: 100%;
             padding: 14px;
@@ -125,20 +115,6 @@
             background: var(--primary-red-dark);
         }
         
-        .btn-secondary {
-            width: 100%;
-            padding: 14px;
-            background: #f3f4f6;
-            color: var(--text-dark);
-            border: 1px solid var(--border-light);
-            border-radius: 12px;
-            font-size: 16px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: background 0.2s;
-        }
-        
-        /* Recipe image styling */
         .recipe-image {
             width: 100%;
             height: 200px;
@@ -147,7 +123,6 @@
             margin-bottom: 16px;
         }
         
-        /* Admin button */
         .admin-fab {
             position: fixed;
             bottom: 90px;
@@ -163,8 +138,7 @@
             box-shadow: 0 4px 12px rgba(239, 68, 68, 0.4);
             z-index: 100;
         }
-        
-        /* Hide debug bar by default */
+
         #debugBar {
             display: none;
         }
@@ -184,10 +158,10 @@
             <h2 class="card-title text-center">RecipeAI Pro</h2>
             <p class="card-subtitle text-center">Your culinary AI assistant</p>
             
-            <input id="email" type="email" placeholder="Email" class="input-field">
-            <input id="password" type="password" placeholder="Password (6+ chars)" class="input-field">
+            <input id="email" type="email" placeholder="Email address" class="input-field">
+            <input id="password" type="password" placeholder="Password (6+ characters)" class="input-field">
             <button onclick="signup()" class="btn-primary mb-3">Create Account</button>
-            <button onclick="login()" class="btn-secondary">Sign In</button>
+            <button onclick="login()" class="btn-primary" style="background: #3b82f6;">Sign In</button>
             
             <p id="authError" class="text-red-500 text-sm mt-3 font-medium text-center"></p>
             <p id="authSuccess" class="text-green-500 text-sm mt-3 font-medium text-center"></p>
@@ -196,21 +170,6 @@
 
     <!-- MAIN APP -->
     <div id="app" class="hidden">
-        <!-- Header with user info -->
-        <div class="bg-white shadow-sm p-4 sticky top-0 z-40">
-            <div class="max-w-4xl mx-auto flex items-center justify-between">
-                <h1 class="text-2xl font-bold text-red-500">RecipeAI</h1>
-                <div class="flex gap-2">
-                    <button onclick="showFavorites()" class="px-4 py-2 text-red-500 rounded-lg hover:bg-red-50">
-                        <span class="text-xl">❤️</span>
-                    </button>
-                    <button onclick="logout()" class="px-4 py-2 text-gray-600 rounded-lg hover:bg-gray-100">
-                        <span class="text-xl">↪️</span>
-                    </button>
-                </div>
-            </div>
-        </div>
-
         <div class="max-w-4xl mx-auto p-4 space-y-6">
             <!-- Search -->
             <div class="card">
@@ -273,14 +232,15 @@
 
     <script>
         // ==================== CONFIGURATION ====================
-        const SPONACULAR_API_KEY = 'YOUR_SPONACULAR_KEY_HERE';
+        // 🔴 REPLACE WITH YOUR KEYS:
+        const SPONACULAR_API_KEY = 'cdb0c009328f4bb5becc1b6fdbbe01a7';
         const firebaseConfig = {
-            apiKey: "YOUR_FIREBASE_API_KEY_HERE",
-            authDomain: "YOUR_PROJECT_ID.firebaseapp.com",
-            projectId: "YOUR_PROJECT_ID",
-            storageBucket: "YOUR_PROJECT_ID.firebasestorage.app",
-            messagingSenderId: "YOUR_SENDER_ID",
-            appId: "YOUR_APP_ID"
+            apiKey: "AIzaSyDv2rJfzXxJdmuxbhtN0mAQr8F-RAoc68E",
+            authDomain: "recipe-ai-pro.firebaseapp.com",
+            projectId: "recipe-ai-pro",
+            storageBucket: "recipe-ai-pro.firebasestorage.app",
+            messagingSenderId: "455001844076",
+            appId: "1:455001844076:web:15e70fd2bff85106802b49"
         };
 
         // ==================== DEBUG HELPER ====================
@@ -291,7 +251,6 @@
             
             if (isError) {
                 debugBar.style.display = 'block';
-                debugBar.classList.remove('hidden');
                 debugLog.innerHTML += `<div class="font-bold">❌ ${message}</div>`;
             } else {
                 debugLog.innerHTML += `<div>ℹ️ ${message}</div>`;
@@ -369,8 +328,32 @@
             document.getElementById('app').classList.remove('hidden');
             document.getElementById('adminPanel').classList.add('hidden');
             updateActiveNav('CREATE');
-            // Scroll to create section
-            document.querySelector('#app .space-y-6 > div:nth-child(2)').scrollIntoView({behavior: 'smooth'});
+            document.querySelectorAll('.card')[1].scrollIntoView({behavior: 'smooth'});
+        }
+
+        function showFavorites() {
+            document.getElementById('app').classList.remove('hidden');
+            document.getElementById('adminPanel').classList.add('hidden');
+            updateActiveNav('SAVED');
+            
+            const user = auth.currentUser;
+            db.collection('favorites').where('userId', '==', user.uid).get()
+                .then(snapshot => {
+                    const recipes = snapshot.docs.map(doc => doc.data());
+                    const resultsDiv = document.getElementById('results');
+                    
+                    if (recipes.length === 0) {
+                        resultsDiv.innerHTML = '<div class="card"><p class="text-center text-gray-500">No favorites yet! Search and save recipes first.</p></div>';
+                        return;
+                    }
+                    
+                    resultsDiv.innerHTML = recipes.map(recipe => `
+                        <div class="card">
+                            <img src="${recipe.image}" alt="${recipe.title}" class="recipe-image">
+                            <h3 class="text-xl font-bold">${recipe.title}</h3>
+                        </div>
+                    `).join('');
+                });
         }
 
         function updateActiveNav(active) {
@@ -387,7 +370,7 @@
             const resultsDiv = document.getElementById('results');
             if (!ingredients) return;
 
-            resultsDiv.innerHTML = '<div class="text-center p-8 text-gray-500">🔍 Searching...</div>';
+            resultsDiv.innerHTML = '<div class="card"><p class="text-center text-gray-500">🔍 Searching...</p></div>';
 
             try {
                 const response = await fetch(
@@ -396,7 +379,7 @@
                 const recipes = await response.json();
                 
                 if (recipes.length === 0) {
-                    resultsDiv.innerHTML = '<div class="text-center p-8 text-gray-500">No recipes found. Try different ingredients!</div>';
+                    resultsDiv.innerHTML = '<div class="card"><p class="text-center text-gray-500">No recipes found. Try different ingredients!</p></div>';
                     return;
                 }
 
@@ -412,7 +395,7 @@
                 
                 resultsDiv.innerHTML = recipeHTML;
             } catch (error) {
-                resultsDiv.innerHTML = `<div class="text-center p-8 text-red-500">🔴 API Error: ${error.message}</div>`;
+                resultsDiv.innerHTML = `<div class="card"><p class="text-center text-red-500">🔴 API Error: ${error.message}</p></div>`;
             }
         }
 
@@ -445,7 +428,16 @@
             document.getElementById('app').classList.add('hidden');
             document.getElementById('adminPanel').classList.remove('hidden');
             updateActiveNav('ADMIN');
-            loadPendingRecipes();
+            
+            const user = auth.currentUser;
+            db.collection('admins').doc(user.uid).get().then(doc => {
+                if (doc.exists) {
+                    loadPendingRecipes();
+                } else {
+                    alert('Access denied. Admin only.');
+                    showHome();
+                }
+            });
         }
 
         function loadPendingRecipes() {
@@ -453,7 +445,7 @@
                 .then(snapshot => {
                     const list = document.getElementById('pendingRecipes');
                     if (snapshot.empty) {
-                        list.innerHTML = '<div class="text-center p-8 text-gray-500">No pending recipes</div>';
+                        list.innerHTML = '<div class="text-center text-gray-500 p-8">No pending recipes</div>';
                         return;
                     }
                     list.innerHTML = snapshot.docs.map(doc => `
