@@ -1,6 +1,12 @@
 // ==================== CONFIG ====================
 const SPONACULAR_API_KEY = "cdb0c009328f4bb5becc1b6fdbbe01a7";
 
+// Import the functions you need from the SDKs you need
+import { initializeApp } from "firebase/app";
+// TODO: Add SDKs for Firebase products that you want to use
+// https://firebase.google.com/docs/web/setup#available-libraries
+
+// Your web app's Firebase configuration
 const firebaseConfig = {
   apiKey: "AIzaSyDv2rJfzXxJdmuxbhtN0mAQr8F-RAoc68E",
   authDomain: "recipe-ai-pro.firebaseapp.com",
@@ -9,6 +15,9 @@ const firebaseConfig = {
   messagingSenderId: "455001844076",
   appId: "1:455001844076:web:15e70fd2bff85106802b49"
 };
+
+// Initialize Firebase
+const app = initializeApp(firebaseConfig);
 
 // ==================== INIT ====================
 firebase.initializeApp(firebaseConfig);
