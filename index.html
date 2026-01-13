@@ -122,36 +122,10 @@
             border-radius: 12px;
             margin-bottom: 16px;
         }
-        
-        .admin-fab {
-            position: fixed;
-            bottom: 90px;
-            right: 20px;
-            width: 56px;
-            height: 56px;
-            background: var(--primary-red);
-            color: white;
-            border: none;
-            border-radius: 50%;
-            font-size: 24px;
-            cursor: pointer;
-            box-shadow: 0 4px 12px rgba(239, 68, 68, 0.4);
-            z-index: 100;
-        }
-
-        #debugBar {
-            display: none;
-        }
     </style>
 </head>
 <body>
     
-    <!-- DEBUG BAR -->
-    <div id="debugBar" class="fixed top-0 left-0 right-0 bg-red-600 text-white p-4 z-50 max-h-32 overflow-y-auto">
-        <strong>🔴 DEBUG LOG:</strong>
-        <div id="debugLog" class="text-sm mt-1"></div>
-    </div>
-
     <!-- LOGIN PAGE -->
     <div id="loginModal" class="min-h-screen flex items-center justify-center p-4">
         <div class="card w-full max-w-sm">
@@ -232,7 +206,6 @@
 
     <script>
         // ==================== CONFIGURATION ====================
-        // 🔴 REPLACE WITH YOUR KEYS:
         const SPONACULAR_API_KEY = 'cdb0c009328f4bb5becc1b6fdbbe01a7';
         const firebaseConfig = {
             apiKey: "AIzaSyDv2rJfzXxJdmuxbhtN0mAQr8F-RAoc68E",
@@ -243,27 +216,8 @@
             appId: "1:455001844076:web:15e70fd2bff85106802b49"
         };
 
-        // ==================== DEBUG HELPER ====================
-        function debugLog(message, isError = false) {
-            console.log(message);
-            const debugBar = document.getElementById('debugBar');
-            const debugLog = document.getElementById('debugLog');
-            
-            if (isError) {
-                debugBar.style.display = 'block';
-                debugLog.innerHTML += `<div class="font-bold">❌ ${message}</div>`;
-            } else {
-                debugLog.innerHTML += `<div>ℹ️ ${message}</div>`;
-            }
-        }
-
-        // ==================== FIREBASE INIT ====================
-        try {
-            firebase.initializeApp(firebaseConfig);
-        } catch (error) {
-            debugLog(`FIREBASE INIT ERROR: ${error.message}`, true);
-        }
-
+        // ==================== INIT ====================
+        firebase.initializeApp(firebaseConfig);
         const auth = firebase.auth();
         const db = firebase.firestore();
 
@@ -273,7 +227,6 @@
                 document.getElementById('loginModal').classList.add('hidden');
                 document.getElementById('app').classList.remove('hidden');
                 
-                // Show admin nav if admin
                 db.collection('admins').doc(user.uid).get().then(doc => {
                     if (doc.exists) {
                         document.getElementById('adminNavBtn').classList.remove('hidden');
@@ -298,7 +251,6 @@
                 })
                 .catch(error => {
                     document.getElementById('authError').textContent = `🔴 ${error.message}`;
-                    debugLog(`Sign-up: ${error.message}`, true);
                 });
         }
 
@@ -309,7 +261,6 @@
             auth.signInWithEmailAndPassword(email, pass)
                 .catch(error => {
                     document.getElementById('authError').textContent = `🔴 ${error.message}`;
-                    debugLog(`Login: ${error.message}`, true);
                 });
         }
 
@@ -321,21 +272,20 @@
         function showHome() {
             document.getElementById('app').classList.remove('hidden');
             document.getElementById('adminPanel').classList.add('hidden');
-            updateActiveNav('HOME');
+            document.querySelectorAll('.nav-item').forEach(item => item.classList.remove('active'));
+            document.querySelector('[onclick="showHome()"]').classList.add('active');
         }
 
         function showCreate() {
             document.getElementById('app').classList.remove('hidden');
             document.getElementById('adminPanel').classList.add('hidden');
-            updateActiveNav('CREATE');
+            document.querySelectorAll('.nav-item').forEach(item => item.classList.remove('active'));
+            document.querySelector('[onclick="showCreate()"]').classList.add('active');
             document.querySelectorAll('.card')[1].scrollIntoView({behavior: 'smooth'});
         }
 
         function showFavorites() {
-            document.getElementById('app').classList.remove('hidden');
-            document.getElementById('adminPanel').classList.add('hidden');
-            updateActiveNav('SAVED');
-            
+            showHome();
             const user = auth.currentUser;
             db.collection('favorites').where('userId', '==', user.uid).get()
                 .then(snapshot => {
@@ -354,14 +304,6 @@
                         </div>
                     `).join('');
                 });
-        }
-
-        function updateActiveNav(active) {
-            document.querySelectorAll('.nav-item').forEach(item => item.classList.remove('active'));
-            const activeItem = Array.from(document.querySelectorAll('.nav-item')).find(item => 
-                item.textContent.includes(active)
-            );
-            if (activeItem) activeItem.classList.add('active');
         }
 
         // ==================== RECIPE SEARCH ====================
@@ -420,14 +362,17 @@
                 document.getElementById('recipeName').value = '';
                 document.getElementById('recipeDesc').value = '';
                 alert('✅ Recipe submitted for review!');
-            }).catch(error => debugLog(`Submit recipe: ${error.message}`, true));
+            }).catch(error => {
+                alert(`Error: ${error.message}`);
+            });
         }
 
         // ==================== ADMIN PANEL ====================
-        async function showAdmin() {
+        function showAdmin() {
             document.getElementById('app').classList.add('hidden');
             document.getElementById('adminPanel').classList.remove('hidden');
-            updateActiveNav('ADMIN');
+            document.querySelectorAll('.nav-item').forEach(item => item.classList.remove('active'));
+            document.querySelector('[onclick="showAdmin()"]').classList.add('active');
             
             const user = auth.currentUser;
             db.collection('admins').doc(user.uid).get().then(doc => {
@@ -460,7 +405,9 @@
                         </div>
                     `).join('');
                 })
-                .catch(error => debugLog(`Load pending: ${error.message}`, true));
+                .catch(error => {
+                    alert(`Error loading recipes: ${error.message}`);
+                });
         }
 
         function approveRecipe(docId) {
@@ -469,14 +416,18 @@
                     alert('✅ Recipe approved!');
                     loadPendingRecipes();
                 })
-                .catch(error => debugLog(`Approve: ${error.message}`, true));
+                .catch(error => {
+                    alert(`Error: ${error.message}`);
+                });
         }
 
         function rejectRecipe(docId) {
             if (confirm('Reject this recipe?')) {
                 db.collection('pendingRecipes').doc(docId).delete()
                     .then(() => loadPendingRecipes())
-                    .catch(error => debugLog(`Reject: ${error.message}`, true));
+                    .catch(error => {
+                        alert(`Error: ${error.message}`);
+                    });
             }
         }
 
@@ -492,8 +443,11 @@
                 timestamp: Date.now()
             }).then(() => {
                 alert('✅ Added to favorites!');
-            }).catch(error => debugLog(`Favorites: ${error.message}`, true));
+            }).catch(error => {
+                alert(`Error: ${error.message}`);
+            });
         }
     </script>
 </body>
 </html>
+
