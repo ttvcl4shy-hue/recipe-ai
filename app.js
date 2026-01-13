@@ -17,21 +17,15 @@ const db = firebase.firestore();
 
 // ==================== HELPERS ====================
 const $ = id => document.getElementById(id);
-const clean = str => str.replace(/[<>]/g, "");
 
-// ==================== AUTH STATE ====================
+// ==================== AUTH ====================
 auth.onAuthStateChanged(user => {
-  toggle("loginModal", !user);
-  toggle("app", !!user);
-  toggle("adminPanel", false);
+  $("loginModal").classList.toggle("hidden", !!user);
+  $("app").classList.toggle("hidden", !user);
+  $("adminPanel").classList.add("hidden");
   if (user) checkAdmin(user);
 });
 
-function toggle(id, show) {
-  $(id).classList.toggle("hidden", !show);
-}
-
-// ==================== AUTH ====================
 function login() {
   auth.signInWithEmailAndPassword(
     $("email").value.trim(),
@@ -39,20 +33,15 @@ function login() {
   ).catch(e => $("authError").textContent = e.message);
 }
 
-function logout() {
-  auth.signOut();
-}
-
 // ==================== ADMIN ====================
 function checkAdmin(user) {
   db.collection("admins").doc(user.uid).get().then(doc => {
-    if (doc.exists && !document.getElementById("adminBtn")) {
+    if (doc.exists) {
       document.body.insertAdjacentHTML(
         "beforeend",
-        `<button id="adminBtn"
-          onclick="openAdmin()"
-          class="fixed bottom-20 right-4 bg-black text-white px-4 py-3 rounded-full shadow">
-          Admin
+        `<button onclick="openAdmin()"
+          class="fixed bottom-4 right-4 w-12 h-12 rounded-full bg-black text-white shadow-sm">
+          ⚙️
         </button>`
       );
     }
@@ -60,69 +49,55 @@ function checkAdmin(user) {
 }
 
 function openAdmin() {
-  toggle("app", false);
-  toggle("adminPanel", true);
-  loadPendingRecipes();
+  $("app").classList.add("hidden");
+  $("adminPanel").classList.remove("hidden");
+  loadPending();
 }
 
 // ==================== SPOONACULAR ====================
+$("ingredients").addEventListener("keydown", e => {
+  if (e.key === "Enter") findRecipes();
+});
+
 async function findRecipes() {
   const q = $("ingredients").value.trim();
   if (!q) return;
 
-  $("results").textContent = "Loading…";
+  $("results").innerHTML = `
+    <div class="col-span-2 h-40 bg-gray-100 rounded-2xl animate-pulse"></div>
+  `;
 
   try {
     const res = await fetch(
-      `https://api.spoonacular.com/recipes/findByIngredients?ingredients=${encodeURIComponent(q)}&number=6&apiKey=${SPONACULAR_API_KEY}`
+      `https://api.spoonacular.com/recipes/findByIngredients?ingredients=${encodeURIComponent(
+        q
+      )}&number=8&apiKey=${SPONACULAR_API_KEY}`
     );
 
     const data = await res.json();
 
     $("results").innerHTML = data.map(r => `
       <div class="bg-white rounded-2xl overflow-hidden shadow-sm">
-        <img src="${r.image}" class="w-full h-44 object-cover">
-        <div class="p-4">
-          <p class="font-medium">${clean(r.title)}</p>
-        </div>
+        <img src="${r.image}" class="w-full h-40 object-cover" />
       </div>
     `).join("");
   } catch {
-    $("results").textContent = "Failed to load recipes.";
+    $("results").innerHTML = "";
   }
 }
 
-// ==================== FAVORITES ====================
-function showFavorites() {
-  const user = auth.currentUser;
-  if (!user) return;
-
-  db.collection("favorites")
-    .where("userId", "==", user.uid)
-    .get()
-    .then(snap => {
-      $("results").innerHTML = snap.docs.map(d => `
-        <div class="bg-white rounded-xl p-4 shadow-sm">
-          <img src="${d.data().image}" class="rounded-lg mb-2">
-          <p class="font-medium">${clean(d.data().title)}</p>
-        </div>
-      `).join("");
-    });
-}
-
 // ==================== ADMIN QUEUE ====================
-function loadPendingRecipes() {
+function loadPending() {
   db.collection("pendingRecipes")
     .where("status", "==", "pending")
     .get()
     .then(snap => {
       $("pendingRecipes").innerHTML = snap.docs.map(d => `
-        <div class="bg-white p-4 rounded-xl shadow-sm">
-          <h4 class="font-semibold">${clean(d.data().name)}</h4>
-          <p class="text-sm text-gray-500 mb-3">${clean(d.data().description)}</p>
+        <div class="bg-white p-4 rounded-2xl shadow-sm">
+          <p class="text-sm mb-3">${d.data().name}</p>
           <div class="flex gap-2">
-            <button onclick="approve('${d.id}')" class="flex-1 bg-emerald-500 text-white py-2 rounded-lg">Approve</button>
-            <button onclick="reject('${d.id}')" class="flex-1 bg-red-500 text-white py-2 rounded-lg">Reject</button>
+            <button onclick="approve('${d.id}')" class="flex-1 bg-black text-white py-2 rounded-xl">Approve</button>
+            <button onclick="reject('${d.id}')" class="flex-1 border py-2 rounded-xl">Reject</button>
           </div>
         </div>
       `).join("");
@@ -131,10 +106,10 @@ function loadPendingRecipes() {
 
 function approve(id) {
   db.collection("pendingRecipes").doc(id).update({ status: "approved" })
-    .then(loadPendingRecipes);
+    .then(loadPending);
 }
 
 function reject(id) {
   db.collection("pendingRecipes").doc(id).delete()
-    .then(loadPendingRecipes);
+    .then(loadPending);
 }
