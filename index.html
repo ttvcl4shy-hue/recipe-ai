@@ -3,332 +3,45 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>RecipeAI Pro - Debug Mode</title>
+    <title>RecipeAI Pro</title>
+
+    <!-- Tailwind -->
     <script src="https://cdn.tailwindcss.com"></script>
+
+    <!-- Firebase COMPAT SDKs (must match JS usage) -->
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+
+    <!-- App Logic -->
+    <script defer src="app.js"></script>
 </head>
 <body class="bg-gray-100">
-    
-    <!-- DEBUG CONSOLE - Shows red errors -->
-    <div id="debugConsole" class="hidden fixed top-0 left-0 right-0 bg-red-600 text-white p-4 z-50 max-h-32 overflow-y-auto">
-        <strong>🔴 DEBUG:</strong>
-        <div id="debugText"></div>
+
+<div id="loginModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+    <div class="bg-white p-6 rounded-lg w-11/12 max-w-sm">
+        <h2 class="text-2xl font-bold mb-4">🍳 RecipeAI Pro</h2>
+        <input id="email" type="email" placeholder="Email" class="w-full p-3 border rounded mb-3">
+        <input id="password" type="password" placeholder="Password" class="w-full p-3 border rounded mb-3">
+        <button onclick="signup()" class="w-full bg-green-500 text-white p-3 rounded font-bold mb-2">Sign Up</button>
+        <button onclick="login()" class="w-full bg-blue-500 text-white p-3 rounded font-bold mb-2">Login</button>
+        <p id="authError" class="text-red-500 mt-2 text-sm"></p>
     </div>
+</div>
 
-    <!-- LOGIN -->
-    <div id="loginModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-        <div class="bg-white p-6 rounded-lg w-11/12 max-w-sm">
-            <h2 class="text-2xl font-bold mb-4">🍳 RecipeAI Pro</h2>
-            <input id="email" type="email" placeholder="Email" class="w-full p-3 border rounded mb-3">
-            <input id="password" type="password" placeholder="Password (6+ chars)" class="w-full p-3 border rounded mb-3">
-            <button onclick="signup()" class="w-full bg-green-500 text-white p-3 rounded font-bold mb-2">Sign Up</button>
-            <button onclick="login()" class="w-full bg-blue-500 text-white p-3 rounded font-bold mb-2">Login</button>
-            <p id="authError" class="text-red-500 mt-2 text-sm"></p>
-            <div id="firebaseStatus" class="text-xs text-gray-500 mt-3"></div>
-        </div>
-    </div>
+<div id="app" class="hidden max-w-4xl mx-auto p-4 space-y-6">
+    <button onclick="logout()" class="bg-gray-500 text-white px-4 py-2 rounded">Logout</button>
 
-    <!-- MAIN APP -->
-    <div id="app" class="hidden">
-        <nav class="bg-white shadow p-4 sticky top-0">
-            <div class="max-w-4xl mx-auto flex justify-between items-center">
-                <h1 class="text-2xl font-bold text-red-500">🍳 RecipeAI Pro</h1>
-                <div>
-                    <button onclick="showFavorites()" class="bg-pink-500 text-white px-4 py-2 rounded mr-2">❤️</button>
-                    <button onclick="logout()" class="bg-gray-500 text-white px-4 py-2 rounded">Logout</button>
-                </div>
-            </div>
-        </nav>
-        <div class="max-w-4xl mx-auto p-4 space-y-6">
-            <div class="bg-white rounded-lg shadow p-6">
-                <h2 class="text-xl font-bold mb-3">What's in your cupboards?</h2>
-                <textarea id="ingredients" rows="2" class="w-full p-3 border rounded" placeholder="e.g., chicken, rice, tomatoes, garlic"></textarea>
-                <button onclick="findRecipes()" class="w-full bg-red-500 text-white p-3 rounded font-bold mt-3">Find Recipes</button>
-            </div>
-            <div class="bg-white rounded-lg shadow p-6">
-                <h2 class="text-xl font-bold mb-3">Submit Your Recipe</h2>
-                <input id="recipeName" placeholder="Recipe Name" class="w-full p-3 border rounded mb-3">
-                <textarea id="recipeDesc" rows="3" placeholder="Instructions" class="w-full p-3 border rounded mb-3"></textarea>
-                <button onclick="submitRecipe()" class="w-full bg-purple-500 text-white p-3 rounded font-bold">Submit for Review</button>
-            </div>
-            <div id="results"></div>
-        </div>
-    </div>
+    <textarea id="ingredients" class="w-full p-3 border rounded" placeholder="chicken, rice"></textarea>
+    <button onclick="findRecipes()" class="bg-red-500 text-white p-3 rounded font-bold mt-3">Find Recipes</button>
 
-    <!-- ADMIN PANEL -->
-    <div id="adminPanel" class="hidden max-w-4xl mx-auto p-4">
-        <h1 class="text-3xl font-bold mb-6">🔧 Admin Panel</h1>
-        <div class="bg-white rounded-lg shadow p-6 mb-6">
-            <h2 class="text-xl font-bold mb-4">Pending Recipes</h2>
-            <div id="pendingRecipes"></div>
-        </div>
-    </div>
+    <div id="results"></div>
+</div>
 
-    <script>
-        // ==================== CONFIGURATION ====================
-        // 🔴 REPLACE THESE 2 VALUES FIRST - GET THEM BELOW:
-        const SPONACULAR_API_KEY = 'YOUR_SPONACULAR_KEY_HERE';
-        const firebaseConfig = {
-            apiKey: "YOUR_FIREBASE_API_KEY_HERE",
-            authDomain: "YOUR_PROJECT_ID.firebaseapp.com",
-            projectId: "YOUR_PROJECT_ID",
-            storageBucket: "YOUR_PROJECT_ID.appspot.com",
-            messagingSenderId: "YOUR_SENDER_ID",
-            appId: "YOUR_APP_ID"
-        };
+<div id="adminPanel" class="hidden max-w-4xl mx-auto p-4">
+    <h1 class="text-3xl font-bold mb-6">Admin Panel</h1>
+    <div id="pendingRecipes"></div>
+</div>
 
-        // ==================== DEBUG HELPER ====================
-        function logError(message) {
-            console.error(message);
-            document.getElementById('debugConsole').classList.remove('hidden');
-            document.getElementById('debugText').innerHTML += `<div>${message}</div>`;
-        }
-
-        // ==================== FIREBASE INIT ====================
-        try {
-            firebase.initializeApp(firebaseConfig);
-            document.getElementById('firebaseStatus').innerHTML = '<span class="text-green-600">✅ Firebase Connected</span>';
-            console.log('✅ Firebase initialized successfully');
-        } catch (error) {
-            logError(`❌ FIREBASE INIT FAILED: ${error.message}`);
-            document.getElementById('firebaseStatus').innerHTML = '<span class="text-red-600">❌ Firebase Failed</span>';
-        }
-
-        const auth = firebase.auth();
-        const db = firebase.firestore();
-
-        // ==================== AUTH STATE ====================
-        auth.onAuthStateChanged(user => {
-            console.log('Auth state changed:', user ? user.email : 'null');
-            if (user) {
-                document.getElementById('loginModal').classList.add('hidden');
-                document.getElementById('app').classList.remove('hidden');
-                checkAdmin(user);
-            } else {
-                document.getElementById('loginModal').classList.remove('hidden');
-                document.getElementById('app').classList.add('hidden');
-                document.getElementById('adminPanel').classList.add('hidden');
-            }
-        });
-
-        // ==================== SIGNUP ====================
-        function signup() {
-            const email = document.getElementById('email').value;
-            const pass = document.getElementById('password').value;
-            console.log('Attempting sign-up for:', email);
-            
-            auth.createUserWithEmailAndPassword(email, pass)
-                .then(userCredential => {
-                    console.log('✅ Sign-up SUCCESS:', userCredential.user.uid);
-                    document.getElementById('authError').textContent = '';
-                })
-                .catch(error => {
-                    console.error('❌ Sign-up FAILED:', error.code, error.message);
-                    document.getElementById('authError').textContent = `🔴 ${error.message}`;
-                    logError(`Sign-up: ${error.code} - ${error.message}`);
-                });
-        }
-
-        // ==================== LOGIN ====================
-        function login() {
-            const email = document.getElementById('email').value;
-            const pass = document.getElementById('password').value;
-            console.log('Attempting login for:', email);
-            
-            auth.signInWithEmailAndPassword(email, pass)
-                .then(userCredential => {
-                    console.log('✅ Login SUCCESS:', userCredential.user.uid);
-                    document.getElementById('authError').textContent = '';
-                })
-                .catch(error => {
-                    console.error('❌ Login FAILED:', error.code, error.message);
-                    document.getElementById('authError').textContent = `🔴 ${error.message}`;
-                    logError(`Login: ${error.code} - ${error.message}`);
-                });
-        }
-
-        // ==================== LOGOUT ====================
-        function logout() {
-            auth.signOut().catch(error => logError(`Logout: ${error.message}`));
-        }
-
-        // ==================== ADMIN CHECK ====================
-        function checkAdmin(user) {
-            console.log('Checking admin status for:', user.uid);
-            db.collection('admins').doc(user.uid).get()
-                .then(doc => {
-                    if (doc.exists) {
-                        console.log('✅ User is ADMIN');
-                        document.getElementById('app').innerHTML += `
-                            <button onclick="showAdmin()" class="fixed bottom-4 right-4 bg-red-700 text-white p-4 rounded-full shadow-lg z-40 animate-pulse">
-                                🔧
-                            </button>`;
-                    } else {
-                        console.log('User is NOT admin');
-                    }
-                })
-                .catch(error => logError(`Admin check: ${error.message}`));
-        }
-
-        function showAdmin() {
-            document.getElementById('app').classList.add('hidden');
-            document.getElementById('adminPanel').classList.remove('hidden');
-            loadPendingRecipes();
-        }
-
-        // ==================== RECIPE SEARCH ====================
-        async function findRecipes() {
-            const ingredients = document.getElementById('ingredients').value.trim();
-            console.log('Searching recipes for:', ingredients);
-            const resultsDiv = document.getElementById('results');
-            if (!ingredients) return;
-
-            resultsDiv.innerHTML = '<div class="text-center p-8 text-gray-500">🔍 Searching...</div>';
-
-            try {
-                const response = await fetch(
-                    `https://api.spoonacular.com/recipes/findByIngredients?ingredients=${encodeURIComponent(ingredients)}&number=6&apiKey=${SPONACULAR_API_KEY}`
-                );
-                
-                if (!response.ok) {
-                    throw new Error(`API Error: ${response.status}`);
-                }
-
-                const recipes = await response.json();
-                console.log('✅ Found', recipes.length, 'recipes');
-                
-                if (recipes.length === 0) {
-                    resultsDiv.innerHTML = '<div class="text-center p-8 text-gray-500">No recipes found. Try different ingredients!</div>';
-                    return;
-                }
-
-                const recipeHTML = recipes.map(recipe => `
-                    <div class="bg-white rounded-lg shadow p-6 mb-4">
-                        <img src="${recipe.image}" alt="${recipe.title}" class="w-full h-48 object-cover rounded mb-4">
-                        <h3 class="text-xl font-bold mb-2">${recipe.title}</h3>
-                        <p class="text-green-600 mb-3">✅ Uses ${recipe.usedIngredientCount} of your ingredients</p>
-                        <p class="text-gray-600 mb-3">Missing: ${recipe.missedIngredients.map(i => i.name).join(', ')}</p>
-                        <button onclick="toggleFavorite('${recipe.title}', '${recipe.image}')" class="bg-pink-500 text-white px-4 py-2 rounded">❤️ Add to Favorites</button>
-                    </div>
-                `).join('');
-                
-                resultsDiv.innerHTML = recipeHTML;
-            } catch (error) {
-                console.error('❌ Recipe search FAILED:', error);
-                resultsDiv.innerHTML = `<div class="text-center p-8 text-red-500">🔴 API Error: ${error.message}</div>`;
-                logError(`Recipe search: ${error.message}`);
-            }
-        }
-
-        // ==================== FAVORITES ====================
-        function toggleFavorite(title, image) {
-            const user = auth.currentUser;
-            if (!user) return alert('Login to save favorites!');
-            
-            console.log('Adding favorite:', title);
-            db.collection('favorites').add({
-                userId: user.uid,
-                title: title,
-                image: image,
-                timestamp: Date.now()
-            }).then(() => {
-                alert('✅ Added to favorites!');
-            }).catch(error => logError(`Favorites: ${error.message}`));
-        }
-
-        function showFavorites() {
-            const user = auth.currentUser;
-            console.log('Loading favorites for:', user.uid);
-            
-            db.collection('favorites').where('userId', '==', user.uid).get()
-                .then(snapshot => {
-                    const recipes = snapshot.docs.map(doc => doc.data());
-                    console.log('✅ Found', recipes.length, 'favorites');
-                    const resultsDiv = document.getElementById('results');
-                    
-                    if (recipes.length === 0) {
-                        resultsDiv.innerHTML = '<div class="text-center p-8 text-gray-500">No favorites yet!</div>';
-                        return;
-                    }
-                    
-                    resultsDiv.innerHTML = recipes.map(recipe => `
-                        <div class="bg-white rounded-lg shadow p-6 mb-4">
-                            <img src="${recipe.image}" alt="${recipe.title}" class="w-full h-48 object-cover rounded mb-4">
-                            <h3 class="text-xl font-bold">${recipe.title}</h3>
-                        </div>
-                    `).join('');
-                })
-                .catch(error => logError(`Load favorites: ${error.message}`));
-        }
-
-        // ==================== SUBMIT RECIPE ====================
-        function submitRecipe() {
-            const user = auth.currentUser;
-            if (!user) return alert('Login to submit recipes!');
-            
-            const name = document.getElementById('recipeName').value.trim();
-            const desc = document.getElementById('recipeDesc').value.trim();
-            
-            if (!name || !desc) return alert('Fill all fields!');
-            
-            console.log('Submitting recipe:', name);
-            db.collection('pendingRecipes').add({
-                name: name,
-                description: desc,
-                userId: user.uid,
-                userEmail: user.email,
-                timestamp: Date.now(),
-                status: 'pending'
-            }).then(() => {
-                document.getElementById('recipeName').value = '';
-                document.getElementById('recipeDesc').value = '';
-                alert('✅ Recipe submitted for review!');
-            }).catch(error => logError(`Submit recipe: ${error.message}`));
-        }
-
-        // ==================== ADMIN FUNCTIONS ====================
-        function loadPendingRecipes() {
-            console.log('Loading pending recipes...');
-            db.collection('pendingRecipes').where('status', '==', 'pending').get()
-                .then(snapshot => {
-                    const list = document.getElementById('pendingRecipes');
-                    if (snapshot.empty) {
-                        list.innerHTML = '<p class="text-gray-500">No pending recipes</p>';
-                        return;
-                    }
-                    list.innerHTML = snapshot.docs.map(doc => `
-                        <div class="border-b pb-4 mb-4">
-                            <h4 class="font-bold text-lg">${doc.data().name}</h4>
-                            <p class="text-sm text-gray-600 mb-2">By: ${doc.data().userEmail}</p>
-                            <p class="mb-3">${doc.data().description}</p>
-                            <button onclick="approveRecipe('${doc.id}')" class="bg-green-500 text-white px-3 py-1 rounded mr-2">Approve</button>
-                            <button onclick="rejectRecipe('${doc.id}')" class="bg-red-500 text-white px-3 py-1 rounded mr-2">Reject</button>
-                        </div>
-                    `).join('');
-                })
-                .catch(error => logError(`Load pending: ${error.message}`));
-        }
-
-        function approveRecipe(docId) {
-            console.log('Approving recipe:', docId);
-            db.collection('pendingRecipes').doc(docId).update({status: 'approved'})
-                .then(() => {
-                    alert('✅ Recipe approved!');
-                    loadPendingRecipes();
-                })
-                .catch(error => logError(`Approve: ${error.message}`));
-        }
-
-        function rejectRecipe(docId) {
-            if (confirm('Reject this recipe?')) {
-                console.log('Rejecting recipe:', docId);
-                db.collection('pendingRecipes').doc(docId).delete()
-                    .then(() => loadPendingRecipes())
-                    .catch(error => logError(`Reject: ${error.message}`));
-            }
-        }
-    </script>
 </body>
 </html>
