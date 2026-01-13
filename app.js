@@ -1,4 +1,4 @@
-// ==================== CONFIGURATION ====================
+// ==================== CONFIG ====================
 const SPONACULAR_API_KEY = "cdb0c009328f4bb5becc1b6fdbbe01a7";
 
 const firebaseConfig = {
@@ -10,63 +10,48 @@ const firebaseConfig = {
   appId: "1:455001844076:web:15e70fd2bff85106802b49"
 };
 
-// ==================== FIREBASE INIT ====================
+// ==================== INIT ====================
 firebase.initializeApp(firebaseConfig);
 const auth = firebase.auth();
 const db = firebase.firestore();
 
+// ==================== HELPERS ====================
+const $ = id => document.getElementById(id);
+const clean = str => str.replace(/[<>]/g, "");
+
 // ==================== AUTH STATE ====================
 auth.onAuthStateChanged(user => {
-  if (user) {
-    hide("loginModal");
-    show("app");
-    checkAdmin(user);
-  } else {
-    show("loginModal");
-    hide("app");
-    hide("adminPanel");
-  }
+  toggle("loginModal", !user);
+  toggle("app", !!user);
+  toggle("adminPanel", false);
+  if (user) checkAdmin(user);
 });
 
-function show(id) {
-  document.getElementById(id).classList.remove("hidden");
-}
-
-function hide(id) {
-  document.getElementById(id).classList.add("hidden");
+function toggle(id, show) {
+  $(id).classList.toggle("hidden", !show);
 }
 
 // ==================== AUTH ====================
-function signup() {
-  auth.createUserWithEmailAndPassword(val("email"), val("password"))
-    .catch(e => setAuthError(e.message));
-}
-
 function login() {
-  auth.signInWithEmailAndPassword(val("email"), val("password"))
-    .catch(e => setAuthError(e.message));
+  auth.signInWithEmailAndPassword(
+    $("email").value.trim(),
+    $("password").value
+  ).catch(e => $("authError").textContent = e.message);
 }
 
 function logout() {
   auth.signOut();
 }
 
-function val(id) {
-  return document.getElementById(id).value.trim();
-}
-
-function setAuthError(msg) {
-  document.getElementById("authError").textContent = msg;
-}
-
 // ==================== ADMIN ====================
 function checkAdmin(user) {
   db.collection("admins").doc(user.uid).get().then(doc => {
-    if (doc.exists) {
-      document.getElementById("app").insertAdjacentHTML(
+    if (doc.exists && !document.getElementById("adminBtn")) {
+      document.body.insertAdjacentHTML(
         "beforeend",
-        `<button onclick="showAdmin()"
-          class="fixed bottom-4 right-4 bg-black text-white px-4 py-3 rounded-full shadow">
+        `<button id="adminBtn"
+          onclick="openAdmin()"
+          class="fixed bottom-20 right-4 bg-black text-white px-4 py-3 rounded-full shadow">
           Admin
         </button>`
       );
@@ -74,55 +59,40 @@ function checkAdmin(user) {
   });
 }
 
-function showAdmin() {
-  hide("app");
-  show("adminPanel");
+function openAdmin() {
+  toggle("app", false);
+  toggle("adminPanel", true);
   loadPendingRecipes();
 }
 
 // ==================== SPOONACULAR ====================
 async function findRecipes() {
-  const ingredients = val("ingredients");
-  if (!ingredients) return;
+  const q = $("ingredients").value.trim();
+  if (!q) return;
 
-  const results = document.getElementById("results");
-  results.innerHTML = "Loading…";
+  $("results").textContent = "Loading…";
 
   try {
     const res = await fetch(
-      `https://api.spoonacular.com/recipes/findByIngredients?ingredients=${encodeURIComponent(
-        ingredients
-      )}&number=6&apiKey=${SPONACULAR_API_KEY}`
+      `https://api.spoonacular.com/recipes/findByIngredients?ingredients=${encodeURIComponent(q)}&number=6&apiKey=${SPONACULAR_API_KEY}`
     );
 
-    const recipes = await res.json();
+    const data = await res.json();
 
-    results.innerHTML = recipes.map(r => `
+    $("results").innerHTML = data.map(r => `
       <div class="bg-white rounded-2xl overflow-hidden shadow-sm">
         <img src="${r.image}" class="w-full h-44 object-cover">
         <div class="p-4">
-          <h3 class="font-semibold">${r.title}</h3>
+          <p class="font-medium">${clean(r.title)}</p>
         </div>
       </div>
     `).join("");
-  } catch (err) {
-    results.innerHTML = "Error loading recipes";
+  } catch {
+    $("results").textContent = "Failed to load recipes.";
   }
 }
 
 // ==================== FAVORITES ====================
-function toggleFavorite(title, image) {
-  const user = auth.currentUser;
-  if (!user) return;
-
-  db.collection("favorites").add({
-    userId: user.uid,
-    title,
-    image,
-    createdAt: Date.now()
-  });
-}
-
 function showFavorites() {
   const user = auth.currentUser;
   if (!user) return;
@@ -131,13 +101,12 @@ function showFavorites() {
     .where("userId", "==", user.uid)
     .get()
     .then(snap => {
-      document.getElementById("results").innerHTML =
-        snap.docs.map(d => `
-          <div class="bg-white rounded-xl p-4 shadow-sm">
-            <img src="${d.data().image}" class="rounded-lg mb-2">
-            <p class="font-medium">${d.data().title}</p>
-          </div>
-        `).join("");
+      $("results").innerHTML = snap.docs.map(d => `
+        <div class="bg-white rounded-xl p-4 shadow-sm">
+          <img src="${d.data().image}" class="rounded-lg mb-2">
+          <p class="font-medium">${clean(d.data().title)}</p>
+        </div>
+      `).join("");
     });
 }
 
@@ -147,34 +116,25 @@ function loadPendingRecipes() {
     .where("status", "==", "pending")
     .get()
     .then(snap => {
-      document.getElementById("pendingRecipes").innerHTML =
-        snap.docs.map(d => `
-          <div class="bg-white p-4 rounded-xl shadow-sm">
-            <h4 class="font-semibold">${d.data().name}</h4>
-            <p class="text-sm text-gray-500 mb-3">${d.data().description}</p>
-            <div class="flex gap-2">
-              <button onclick="approveRecipe('${d.id}')"
-                class="flex-1 bg-emerald-500 text-white py-2 rounded-lg">
-                Approve
-              </button>
-              <button onclick="rejectRecipe('${d.id}')"
-                class="flex-1 bg-red-500 text-white py-2 rounded-lg">
-                Reject
-              </button>
-            </div>
+      $("pendingRecipes").innerHTML = snap.docs.map(d => `
+        <div class="bg-white p-4 rounded-xl shadow-sm">
+          <h4 class="font-semibold">${clean(d.data().name)}</h4>
+          <p class="text-sm text-gray-500 mb-3">${clean(d.data().description)}</p>
+          <div class="flex gap-2">
+            <button onclick="approve('${d.id}')" class="flex-1 bg-emerald-500 text-white py-2 rounded-lg">Approve</button>
+            <button onclick="reject('${d.id}')" class="flex-1 bg-red-500 text-white py-2 rounded-lg">Reject</button>
           </div>
-        `).join("");
+        </div>
+      `).join("");
     });
 }
 
-function approveRecipe(id) {
-  db.collection("pendingRecipes").doc(id)
-    .update({ status: "approved" })
+function approve(id) {
+  db.collection("pendingRecipes").doc(id).update({ status: "approved" })
     .then(loadPendingRecipes);
 }
 
-function rejectRecipe(id) {
-  db.collection("pendingRecipes").doc(id)
-    .delete()
+function reject(id) {
+  db.collection("pendingRecipes").doc(id).delete()
     .then(loadPendingRecipes);
 }
